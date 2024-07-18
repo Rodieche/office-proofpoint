@@ -30,7 +30,7 @@ foreach ($mailbox in $mailboxes) {
         DisplayName = $mailbox.DisplayName
         PrimaryEmail = $primaryEmail
         Aliases = ($aliases -join "; ")
-        RecipientType = $mailbox.RecipientType
+        RecipientType = $mailbox.RecipientTypeDetails
     }
 }
 

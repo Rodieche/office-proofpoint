@@ -155,7 +155,7 @@ export const setVars = async () => {
         finalAliasArray.push(...alias);
     })
 
-    console.log(finalAliasArray);
+    // console.log(finalAliasArray);
 
     createExcelSheet(mails_to_export, 'Digest.xlsx');
     updateExcelSheet(finalAliasArray, 'Digest.xlsx');
