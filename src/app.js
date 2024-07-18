@@ -10,6 +10,7 @@ import path from 'path';
 import { getDataFromExcel } from './plugins/excel/readfiles.js';
 import { checkProofpoint } from './helpers/proofpointCheck.js';
 import { checkAliases } from './helpers/aliasesCheck.js';
+import { checkProofType } from './helpers/checkProofType.js';
 
 const { prompt } = prompts;
 configDotenv();
@@ -63,7 +64,7 @@ export const setVars = async () => {
     console.log('|                  GENERATING EXCEL FILE                    |');
     console.log('=============================================================');
     console.log('Generating Excel file...')
-    createExcelSheet(selectedOrg, users);
+    createExcelSheet(users);
     users.forEach(function(user){
         if(!user.alias) return
         user.alias.forEach(function(a){
@@ -75,7 +76,7 @@ export const setVars = async () => {
         })
     });
     console.log('Checking Aliases...')
-    updateExcelSheet(selectedOrg, aliases_data);
+    updateExcelSheet(aliases_data);
     console.log('Export complete');
 
     console.log('=============================================================');
@@ -90,6 +91,8 @@ export const setVars = async () => {
         console.log('Please run the next command on Powershell (as admin) first: .\\src\\powershell\\v2Exchange.ps1 ');
         return;
     }
+
+    console.log('Please wait...')
 
     let mailsExchange = getDataFromExcel('Mailboxes-office.csv');
     mailsExchange = mailsExchange.map(ex => {
@@ -127,17 +130,40 @@ export const setVars = async () => {
     let newInfo = [];
 
     mailsExchange.forEach(function(mail){
+        const ppt = checkProofpoint(mail.PrimaryEmail, users);
         let data = {
             name: mail.DisplayName,
             primaryEmail: mail.PrimaryEmail,
             mailboxType: mail.RecipientType,
-            proofpointType: checkProofpoint(mail.PrimaryEmail, users),
-            alias: checkAliases(mail.PrimaryEmail, mail.Aliases, aliases_data)
+            proofpointType: ppt,
+            alias: checkAliases(mail.PrimaryEmail, mail.Aliases, aliases_data),
+            actions: checkProofType(mail.RecipientType, ppt)
         };
         newInfo.push(data);
     });
 
-    console.log(newInfo);
+    console.log('Creating digest...')
+    
+    const mails_to_export = newInfo.map(m => {
+        const { alias, ...dataMail } = m;
+        return dataMail;
+    })
+    
+    let finalAliasArray = [];
+    newInfo.forEach(function(m){
+        const { alias, ...dataMail } = m;
+        finalAliasArray.push(...alias);
+    })
+
+    console.log(finalAliasArray);
+
+    createExcelSheet(mails_to_export, 'Digest.xlsx');
+    updateExcelSheet(finalAliasArray, 'Digest.xlsx');
+
+    console.log('=============================================================');
+    console.log('|                  VERIFICATION COMPLETED                    |');
+    console.log('=============================================================');
+
 
     return;
 }

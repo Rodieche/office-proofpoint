@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { utils, writeFile } from 'xlsx';
 
-export const createExcelSheet = (companyName, data) => {
+export const createExcelSheet = (data, nameFile=`Mailboxes-proofpoint.xlsx`) => {
     const outputDir = path.join(process.cwd(), 'output');
 
     // Check if the directory exists, if not create it
@@ -13,7 +13,7 @@ export const createExcelSheet = (companyName, data) => {
     const newBook = utils.book_new();
     const newSheet = utils.json_to_sheet(data);
     utils.book_append_sheet(newBook, newSheet, "Proofpoint");
-    writeFile(newBook, path.join(outputDir, `Mailboxes-proofpoint.xlsx`));
+    writeFile(newBook, path.join(outputDir, nameFile));
 
     return;
 };

@@ -17,7 +17,7 @@ export const fetchEndpoint = async (endpoint, username, password) => {
         });
         return data;
     }catch(e){
-        console.x(e);
+        console.error('Internal Error');
         throw new Error('Internal Error');
     }
 }

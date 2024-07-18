@@ -16,10 +16,7 @@ Import-Module -Name ExchangeOnlineManagement
 Connect-ExchangeOnline -ShowProgress $true
 
 # Get the mailboxes and their email addresses
-$mailboxes = Get-Mailbox -RecipientTypeDetails UserMailbox | Select-Object DisplayName, PrimarySmtpAddress, EmailAddresses
-
-# Get the RecipientType for accounts mailboxes
-$accountRecipientTypes = Get-Mailbox accounts | Select-Object -ExpandProperty RecipientType
+$mailboxes = Get-Mailbox | Select-Object DisplayName, PrimarySmtpAddress, EmailAddresses, RecipientTypeDetails, RecipientType
 
 # Create a list to store the processed information
 $results = @()
@@ -33,7 +30,7 @@ foreach ($mailbox in $mailboxes) {
         DisplayName = $mailbox.DisplayName
         PrimaryEmail = $primaryEmail
         Aliases = ($aliases -join "; ")
-        RecipientType = $accountRecipientTypes
+        RecipientType = $mailbox.RecipientType
     }
 }
 

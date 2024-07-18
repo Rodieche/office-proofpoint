@@ -33,6 +33,7 @@ export const checkAliases = (primaryMail, mailboxAliases, proofpointMails) => {
     
     info = info.map(alias => {
         return {
+            primaryMail,
             alias,
             proofpointInfo: check(alias, mailboxAliases, proofpointAliases),
         }
