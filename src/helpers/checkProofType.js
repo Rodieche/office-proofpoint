@@ -1,5 +1,5 @@
 export const checkProofType = (mailType, proofType) => {
-    console.log(mailType, proofType);
+    // console.log(mailType, proofType);
     if(proofType == 'organization_admin' || proofType == 'end_user'){
         if(mailType == 'UserMailbox'){
             return 'OK';

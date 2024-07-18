@@ -70,7 +70,7 @@ export const setVars = async () => {
         user.alias.forEach(function(a){
             const newAlias = {
                 email: user.title,
-                alias: a
+                alias: a.toLowerCase()
             }
         aliases_data.push(newAlias);
         })
@@ -86,9 +86,9 @@ export const setVars = async () => {
     console.log('Checking files...');
     const existMailbox = fs.existsSync(path.join(process.cwd(),'output', 'Mailboxes-office.csv'));
     if(existMailbox){
-        console.log('Microsoft 365 Exchange Export file found');
+        console.warn('Microsoft 365 Exchange Export file found');
     }else{
-        console.log('Please run the next command on Powershell (as admin) first: .\\src\\powershell\\v2Exchange.ps1 ');
+        console.error('Please run the next command on Powershell (as admin) first: .\\src\\powershell\\v2Exchange.ps1 ');
         return;
     }
 
@@ -97,35 +97,16 @@ export const setVars = async () => {
     let mailsExchange = getDataFromExcel('Mailboxes-office.csv');
     mailsExchange = mailsExchange.map(ex => {
         let newAlias = [];
-        const {Aliases, ...data} = ex;
+        const {Aliases, PrimaryEmail, ...data} = ex;
         Aliases.split(';').forEach(function(a){
-            newAlias.push(a.split(':')[1]);
+            newAlias.push(a.split(':')[1].toLowerCase());
         })
         return {
-            ...data, Aliases: newAlias
+            PrimaryEmail: PrimaryEmail.toLowerCase(),
+            Aliases: newAlias,
+            ...data
         }
-    })
-
-    // users = Proofpoint user
-    // {
-    //     title: 'aaa@asdds.com',
-    //     type: 'user',
-    //     mail: 'Rudolf Echenique'
-    // }
-    // aliases_data = Proofpoint aliases
-    // {
-    //     email: 'email@domain.com',
-    //     alias: 'alias@domain.com'
-    // }
-    // mailsExchange = Mailbox emails
-    // {
-    //     DisplayName: 'Blade_Purchasing',
-    //     PrimaryEmail: 'blade_purchasing@propellor.com',
-    //     RecipientType: 'UserMailbox',
-    //     Aliases: [ 'blade_purchasing@propellor.com' ]
-    // }
-
-    // console.log(mailsExchange);
+    });
 
     let newInfo = [];
 
@@ -164,6 +145,8 @@ export const setVars = async () => {
     console.log('|                  VERIFICATION COMPLETED                    |');
     console.log('=============================================================');
 
+    console.log(`Check Digest.xlsx file on ${path.join(process.cwd(), 'output')}`);
+    console.warn('Move Digest file if you need the information, it will be deleted if run the app again');
 
     return;
 }

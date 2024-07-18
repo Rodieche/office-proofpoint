@@ -23,19 +23,22 @@ export const checkAliases = (primaryMail, mailboxAliases, proofpointMails) => {
             return 'Needs to check on both';
         }
     }
+
+    const domain = primaryMail.split('@')[1];
     
     let info = [];
 
     let proofpointAliases = proofpointMails.filter(r => r.email == primaryMail);
     proofpointAliases = proofpointAliases.map(p => p.alias);
+    let maliases = mailboxAliases.filter(r => (r != primaryMail && r.split('@')[1] == domain));
 
-    info = [...new Set([...mailboxAliases, ...proofpointAliases])];
+    info = [...new Set([...maliases, ...proofpointAliases])];
     
     info = info.map(alias => {
         return {
             primaryMail,
             alias,
-            proofpointInfo: check(alias, mailboxAliases, proofpointAliases),
+            proofpointInfo: check(alias, maliases, proofpointAliases),
         }
     });
 
