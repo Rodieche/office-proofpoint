@@ -13,7 +13,7 @@ export const createExcelSheet = (companyName, data) => {
     const newBook = utils.book_new();
     const newSheet = utils.json_to_sheet(data);
     utils.book_append_sheet(newBook, newSheet, "Proofpoint");
-    writeFile(newBook, path.join(outputDir, `${companyName}_digest.xlsx`));
+    writeFile(newBook, path.join(outputDir, `Mailboxes-proofpoint.xlsx`));
 
     return;
 };
