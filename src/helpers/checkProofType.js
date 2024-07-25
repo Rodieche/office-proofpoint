@@ -1,30 +1,32 @@
+import { proofpointAction } from "./proofpointStatus.js";
+
 export const checkProofType = (mailType, proofType) => {
     // console.log(mailType, proofType);
     if(proofType == 'organization_admin' || proofType == 'end_user'){
         if(mailType == 'SharedMailbox'){
-            return 'Needs to change as Functional Account';
+            return proofpointAction.account.functional.add;
         }else if( mailType == 'UserMailbox' ){
-            return 'OK';
+            return proofpointAction.account.ok;
         }else{
-            return 'Needs review'
+            return proofpointAction.account.needReview;
         }
     }else if( proofType == 'functional_account' ){
         if(mailType == 'SharedMailbox'){
-            return 'OK';
+            return proofpointAction.account.ok
         }else if( mailType == 'UserMailbox' ){
-            return 'Needs to change as End User';
+            return proofpointAction.account.user.add;
         }else{
-            return 'Needs review'
+            return proofpointAction.account.needReview;
         }
     }else if(proofType == 'Not in proofpoint'){
         if(mailType == 'SharedMailbox'){
-            return 'Needs to be added as Functional Account';
+            return proofpointAction.account.functional.add;
         }else if( mailType == 'UserMailbox' ){
-            return 'Needs to be added as End User';
+            return proofpointAction.account.user.add;
         }else{
-            return 'Needs review'
+            return proofpointAction.account.needReview;
         }
     }else{
-        return 'Needs review'
+        return proofpointAction.account.needReview;
     }
 }

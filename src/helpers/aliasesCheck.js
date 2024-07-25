@@ -1,12 +1,4 @@
-// Proofpoint aliases
-// {
-//     email: 'email@domain.com',
-//     alias: 'alias@domain.com'
-// }
-
-// Mailbox Aliases
-// [ 'blade_purchasing@propellor.com' ]
-
+import { proofpointAction } from "./proofpointStatus.js";
 
 export const checkAliases = (primaryMail, mailboxAliases, proofpointMails) => {
 
@@ -14,13 +6,13 @@ export const checkAliases = (primaryMail, mailboxAliases, proofpointMails) => {
         const existOnProof = proofpointboxes.includes(alias);
         const existOnMail = mailboxAliases.includes(alias);
         if(existOnMail && existOnProof){
-            return 'OK'
+            return proofpointAction.alias.ok
         }else if(existOnMail && !existOnProof){
-            return 'Need to add proofpoint';
+            return proofpointAction.alias.add
         }else if(!existOnMail && existOnProof){
-            return 'Needs to remove from proofpoint';
+            return proofpointAction.alias.remove;
         }else if(!existOnMail && !existOnProof){
-            return 'Needs to check on both';
+            return proofpointAction.alias.notSure;
         }
     }
 
