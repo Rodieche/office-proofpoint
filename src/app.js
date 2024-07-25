@@ -11,6 +11,7 @@ import { getDataFromExcel } from './plugins/excel/readfiles.js';
 import { checkProofpoint } from './helpers/proofpointCheck.js';
 import { checkAliases } from './helpers/aliasesCheck.js';
 import { checkProofType } from './helpers/checkProofType.js';
+import { checkDomains } from './helpers/CheckDomains.js';
 
 const { prompt } = prompts;
 configDotenv();
@@ -50,9 +51,9 @@ const selectOrg = async() => {
 }
 
 export const setVars = async () => {
-    console.log('=============================================================');
-    console.log('|                  PROOFPOINT AUTHENTICATION                |');
-    console.log('=============================================================');
+    console.warn('=============================================================');
+    console.warn('|                  PROOFPOINT AUTHENTICATION                |');
+    console.warn('=============================================================');
     const responses = await prompt(questions);
     username = responses.user;
     password = responses.pwd;
@@ -60,9 +61,9 @@ export const setVars = async () => {
     selectedOrg = await selectOrg();
     console.log(`Selected customer: ${selectedOrg}`);
     users = await getUsersFromOrgs(selectedOrg, username, password);
-    console.log('=============================================================');
-    console.log('|                  GENERATING EXCEL FILE                    |');
-    console.log('=============================================================');
+    console.warn('=============================================================');
+    console.warn('|                  GENERATING EXCEL FILE                    |');
+    console.warn('=============================================================');
     console.log('Generating Excel file...')
     createExcelSheet(users);
     users.forEach(function(user){
@@ -79,14 +80,14 @@ export const setVars = async () => {
     updateExcelSheet(aliases_data);
     console.log('Export complete');
 
-    console.log('=============================================================');
-    console.log('|                   MERGING INFORMATION                     |');
-    console.log('=============================================================');
+    console.warn('=============================================================');
+    console.warn('|                   MERGING INFORMATION                     |');
+    console.warn('=============================================================');
 
     console.log('Checking files...');
     const existMailbox = fs.existsSync(path.join(process.cwd(),'output', 'Mailboxes-office.csv'));
     if(existMailbox){
-        console.warn('Microsoft 365 Exchange Export file found');
+        console.log('Microsoft 365 Exchange Export file found');
     }else{
         console.error('Please run the next command on Powershell (as admin) first: .\\src\\powershell\\v2Exchange.ps1 ');
         return;
@@ -94,7 +95,25 @@ export const setVars = async () => {
 
     console.log('Please wait...')
 
+    
     let mailsExchange = getDataFromExcel('Mailboxes-office.csv');
+
+    const isDomainOk = checkDomains(mailsExchange, selectedOrg);
+
+    if(!isDomainOk){
+        console.l
+        console.warn('=============================================================');
+        console.warn('|                      DOMAINS ERROR                        |');
+        console.warn('=============================================================');
+        console.error('Proofpoint Domain and Exchange Domain are not the same');
+        return;
+    }else{
+        console.warn('=============================================================');
+        console.warn('|                      DOMAINS MATCH                        |');
+        console.warn('=============================================================');
+        console.log('Proofpoint Domain and Exchange Domain are not the same');
+    }
+
     mailsExchange = mailsExchange.map(ex => {
         let newAlias = [];
         const {Aliases, PrimaryEmail, ...data} = ex;
@@ -141,9 +160,9 @@ export const setVars = async () => {
     createExcelSheet(mails_to_export, 'Digest.xlsx');
     updateExcelSheet(finalAliasArray, 'Digest.xlsx');
 
-    console.log('=============================================================');
-    console.log('|                  VERIFICATION COMPLETED                    |');
-    console.log('=============================================================');
+    console.warn('=============================================================');
+    console.warn('|                  VERIFICATION COMPLETED                    |');
+    console.warn('=============================================================');
 
     console.log(`Check Digest.xlsx file on ${path.join(process.cwd(), 'output')}`);
     console.warn('Move Digest file if you need the information, it will be deleted if run the app again');

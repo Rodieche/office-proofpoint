@@ -9,5 +9,9 @@ export const getOrgs = async (username, password) => {
             value: o.primary_domain,
             description: `Active users: ${o.active_users} - Domain: ${o.primary_domain}` 
         }    
+    }).sort((a, b) => {
+        if (a.title < b.title) return -1;
+        if (a.title > b.title) return 1;
+        return 0;
     });
 }
