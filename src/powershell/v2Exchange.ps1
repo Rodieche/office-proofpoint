@@ -48,3 +48,5 @@ $results | Export-Csv -Path $outputFile -NoTypeInformation -Encoding UTF8
 
 # Disconnect from Exchange Online
 Disconnect-ExchangeOnline -Confirm:$false
+
+exit 0

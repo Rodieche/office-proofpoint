@@ -4,12 +4,13 @@
 # Check the exit status of the previous command
 if ($LASTEXITCODE -eq 0) {
     # Run the Node.js application
-    node .\\src\\app.js >nul 2>&1
+    node .\\src\\app.js
 
     # Check the exit status of the previous command
     if ($LASTEXITCODE -eq 0) {
         # Open the Excel file
-        Start-Process excel .\\output\\Digest.xlsx
+        Invoke-Item .\\output\\Digest.xlsx
+        # Start-Process excel .\\output\\Digest.xlsx
     } else {
         Write-Error "The Node.js application failed to run."
     }
