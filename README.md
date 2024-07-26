@@ -54,10 +54,10 @@ npm run dev
 
 # Tasks
 
-[X] Getting Microsoft 365 Information (https://portal.microsoft.com)
-[X] Getting Proofpoint Information (https://us4.proofpointessentials.com/)
-[X] Generating Excel files
-[ ] Automating Proofpoint actions
+- [X] Getting Microsoft 365 Information (https://portal.microsoft.com)
+- [X] Getting Proofpoint Information (https://us4.proofpointessentials.com/)
+- [X] Generating Excel files
+- [ ] Automating Proofpoint actions
 
 ## Authors
 
