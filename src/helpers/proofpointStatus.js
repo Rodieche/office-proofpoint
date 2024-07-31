@@ -2,9 +2,11 @@ export const proofpointAction = {
     account: {
         user: {
             add: 'Add as END USER on Proofpoint',
+            change: 'Change as END USER on Proofpoint'
         },
         functional: {
             add: 'Add as FUNCTIONAL ACCOUNT on Proofpoint',
+            change: 'Change as FUNCTIONAL ACCOUNT on Proofpoint'
         },
         needReview: 'Needs Review',
         ok: 'OK',

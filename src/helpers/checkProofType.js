@@ -4,7 +4,7 @@ export const checkProofType = (mailType, proofType) => {
     // console.log(mailType, proofType);
     if(proofType == 'organization_admin' || proofType == 'end_user'){
         if(mailType == 'SharedMailbox'){
-            return proofpointAction.account.functional.add;
+            return proofpointAction.account.functional.change;
         }else if( mailType == 'UserMailbox' ){
             return proofpointAction.account.ok;
         }else{
@@ -14,7 +14,7 @@ export const checkProofType = (mailType, proofType) => {
         if(mailType == 'SharedMailbox'){
             return proofpointAction.account.ok
         }else if( mailType == 'UserMailbox' ){
-            return proofpointAction.account.user.add;
+            return proofpointAction.account.user.change;
         }else{
             return proofpointAction.account.needReview;
         }
