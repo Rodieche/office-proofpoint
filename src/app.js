@@ -12,6 +12,7 @@ import { checkProofpoint } from './helpers/proofpointCheck.js';
 import { checkAliases } from './helpers/aliasesCheck.js';
 import { checkProofType } from './helpers/checkProofType.js';
 import { checkDomains } from './helpers/CheckDomains.js';
+import { ExchangeCheck } from './helpers/ExchangeCheck.js';
 
 const { prompt } = prompts;
 configDotenv();
@@ -127,6 +128,8 @@ export const setVars = async () => {
         }
     });
 
+    const onlyOnProofpoint = ExchangeCheck(mailsExchange, users);
+
     let newInfo = [];
 
     mailsExchange.forEach(function(mail){
@@ -144,6 +147,8 @@ export const setVars = async () => {
 
     console.log('Creating digest...')
     
+    newInfo = [...newInfo, ...onlyOnProofpoint];
+
     const mails_to_export = newInfo.map(m => {
         const { alias, ...dataMail } = m;
         return dataMail;
