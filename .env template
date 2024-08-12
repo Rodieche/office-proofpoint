@@ -1,1 +1,5 @@
+# Damain name
 DOMAIN=site.com
+
+# Proofpoint credentials
+PROOFPOINT_CREDENTIALS=as;kdljpowasdjlkjasodijwajsd
