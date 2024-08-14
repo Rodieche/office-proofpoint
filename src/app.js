@@ -13,6 +13,7 @@ import { checkAliases } from './helpers/aliasesCheck.js';
 import { checkProofType } from './helpers/checkProofType.js';
 import { checkDomains } from './helpers/CheckDomains.js';
 import { ExchangeCheck } from './helpers/ExchangeCheck.js';
+import { enviromentVars } from './plugins/enviroments.js';
 
 const { prompt } = prompts;
 configDotenv();
@@ -55,13 +56,20 @@ export const setVars = async () => {
     console.warn('=============================================================');
     console.warn('|                  PROOFPOINT AUTHENTICATION                |');
     console.warn('=============================================================');
-    const responses = await prompt(questions);
-    username = responses.user;
-    password = responses.pwd;
-    orgs = await getOrgs(username, password);
-    selectedOrg = await selectOrg();
-    console.log(`Selected customer: ${selectedOrg}`);
-    users = await getUsersFromOrgs(selectedOrg, username, password);
+    if(!enviromentVars.proofpointCredentials){
+        const responses = await prompt(questions);
+        username = responses.user;
+        password = responses.pwd;
+    }else{
+        const credentials = atob(enviromentVars.proofpointCredentials).split(":");
+        username = credentials[0];
+        password = credentials[1];
+        console.log('Credentials file found')
+    }
+        orgs = await getOrgs(username, password);
+        selectedOrg = await selectOrg();
+        console.log(`Selected customer: ${selectedOrg}`);
+        users = await getUsersFromOrgs(selectedOrg, username, password);
     console.warn('=============================================================');
     console.warn('|                  GENERATING EXCEL FILE                    |');
     console.warn('=============================================================');
