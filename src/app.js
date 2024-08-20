@@ -11,7 +11,7 @@ import { getDataFromExcel } from './plugins/excel/readfiles.js';
 import { checkProofpoint } from './helpers/proofpointCheck.js';
 import { checkAliases } from './helpers/aliasesCheck.js';
 import { checkProofType } from './helpers/checkProofType.js';
-import { checkDomains } from './helpers/CheckDomains.js';
+import { checkDomains, getDomains, matchDomain } from './helpers/CheckDomains.js';
 import { ExchangeCheck } from './helpers/ExchangeCheck.js';
 import { enviromentVars } from './plugins/enviroments.js';
 
@@ -56,6 +56,12 @@ export const setVars = async () => {
     console.warn('=============================================================');
     console.warn('|                  PROOFPOINT AUTHENTICATION                |');
     console.warn('=============================================================');
+    console.log('Checking files...');
+    const existMailbox = fs.existsSync(path.join(process.cwd(),'output', 'Mailboxes-office.csv'));
+    if(!existMailbox){
+        console.error('Please run the next command on Powershell (as admin) first: .\\src\\powershell\\v2Exchange.ps1 ');
+        return;
+    }
     if(!enviromentVars.proofpointCredentials){
         const responses = await prompt(questions);
         username = responses.user;
@@ -66,10 +72,15 @@ export const setVars = async () => {
         password = credentials[1];
         console.log('Credentials file found')
     }
-        orgs = await getOrgs(username, password);
-        selectedOrg = await selectOrg();
-        console.log(`Selected customer: ${selectedOrg}`);
-        users = await getUsersFromOrgs(selectedOrg, username, password);
+    orgs = await getOrgs(username, password);
+    let mailsExchange = getDataFromExcel('Mailboxes-office.csv');
+    const domain = getDomains(mailsExchange);
+
+    //selectedOrg = await selectOrg();
+    selectedOrg = matchDomain(orgs, domain);
+    
+    console.log(`Selected customer: ${selectedOrg}`);
+    users = await getUsersFromOrgs(selectedOrg, username, password);
     console.warn('=============================================================');
     console.warn('|                  GENERATING EXCEL FILE                    |');
     console.warn('=============================================================');
@@ -93,19 +104,9 @@ export const setVars = async () => {
     console.warn('|                   MERGING INFORMATION                     |');
     console.warn('=============================================================');
 
-    console.log('Checking files...');
-    const existMailbox = fs.existsSync(path.join(process.cwd(),'output', 'Mailboxes-office.csv'));
-    if(existMailbox){
-        console.log('Microsoft 365 Exchange Export file found');
-    }else{
-        console.error('Please run the next command on Powershell (as admin) first: .\\src\\powershell\\v2Exchange.ps1 ');
-        return;
-    }
 
     console.log('Please wait...')
 
-    
-    let mailsExchange = getDataFromExcel('Mailboxes-office.csv');
 
     const isDomainOk = checkDomains(mailsExchange, selectedOrg);
 
