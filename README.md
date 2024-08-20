@@ -35,51 +35,28 @@ This project is a script built using PowerShell and Node.js that connects to Mic
 
 1. Ensure Node.js is Installed: Make sure Node.js is on your computer.
 2. Run application.ps1: Execute the script.
-3. Enter Credentials: First, input Microsoft 365 admin credentials, then Proofpoint admin credentials.
+3. Enter Credentials: First, input Microsoft 365 admin credentials (if requested), then Proofpoint admin credentials (if requested).
 
 ### Outcome:
 A digest file is created with merged information from both platforms.
 
-### Set Project
-
-1. Clone this repository
-```powershell
-git clone https://github.com/Rodieche/office-proofpoint.git
-```
-
-2. Rename .env.template to .env
-3. Set the environment vars as example
-4. Install dependencies
-
-```powershell
-npm install
-Install-Module -Name ImportExcel -Scope CurrentUser -Force
-Install-Module -Name ExchangeOnlineManagement -Scope CurrentUser -Force
-Import-Module -Name ImportExcel
-Import-Module -Name ExchangeOnlineManagement
-```
-
 ### Run Application
 
 FIRST TIME STEPS
-1. copy .env.template > .env
-2. to PROOFPOINT_CREDENTIALS go to https://www.base64encode.org/ and encode your proofpoint email and password like "username:password" (without quotes) in the first box. Then click "Encode" button and copy and paste the result 
-3. replace the enviroments var
+1. run on powershell:
+```powershell
+cd ([System.Environment]::GetFolderPath("Desktop"))
+git clone https://github.com/Rodieche/office-proofpoint.git
+cd office-proofpoint
+```
+2. copy .env.template as .env in the same folder
+3. to PROOFPOINT_CREDENTIALS go to https://www.base64encode.org/ and encode your proofpoint email and password like "username:password" (without quotes) in the first box. Then click "Encode" button and copy and paste the result 
+4. replace the enviroments var
 
 NOW YOU CAN RUN THE APP EVERYTIME IS NECESSARY
-4. Execute:
+5. Execute:
 ```powershell
 .\application.ps1
-```
-
-### Testing
-
-1. Run ps1 command on powershell (as admin)
-.\src\powershell\v2Exchange.ps1
-
-2. Execute:
-```bash
-npm run dev
 ```
 
 # Tasks
