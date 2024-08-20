@@ -61,7 +61,13 @@ Import-Module -Name ExchangeOnlineManagement
 
 ### Run Application
 
-Execute:
+FIRST TIME STEPS
+1. copy .env.template > .env
+2. to PROOFPOINT_CREDENTIALS go to https://www.base64encode.org/ and encode your proofpoint email and password like "username:password" (without quotes) in the first box. Then click "Encode" button and copy and paste the result 
+3. replace the enviroments var
+
+NOW YOU CAN RUN THE APP EVERYTIME IS NECESSARY
+4. Execute:
 ```powershell
 .\application.ps1
 ```
@@ -81,6 +87,8 @@ npm run dev
 - [X] Getting Microsoft 365 Information (https://portal.microsoft.com)
 - [X] Getting Proofpoint Information (https://us4.proofpointessentials.com/)
 - [X] Generating Excel files
+- [x] Automate domain checking from Exchange files
+- [X] Save user and password for automatic login 
 - [ ] Automating Proofpoint actions
 
 ## Authors
