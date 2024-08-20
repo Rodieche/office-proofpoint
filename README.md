@@ -54,7 +54,9 @@ cd office-proofpoint
 4. replace the enviroments var
 
 NOW YOU CAN RUN THE APP EVERYTIME IS NECESSARY
+
 5. Execute:
+
 ```powershell
 .\application.ps1
 ```
