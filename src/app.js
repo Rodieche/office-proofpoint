@@ -171,8 +171,21 @@ export const setVars = async () => {
 
     // console.log(finalAliasArray);
 
-    createExcelSheet(mails_to_export, 'Digest.xlsx');
-    updateExcelSheet(finalAliasArray, 'Digest.xlsx');
+    const fileName = `${selectedOrg}_${new Date().getMilliseconds()}.xlsx`;
+    const file = 'digestFile.txt';
+
+    if (fs.existsSync(file)) {
+        fs.unlinkSync(file);
+    }
+    fs.writeFileSync(file, fileName, (err) => {
+        if (err) {
+            console.error("An error occurred while writing the file:", err);
+            return;
+        }
+        console.log(`${file} has been created successfully!`);});
+
+        createExcelSheet(mails_to_export, fileName);
+    updateExcelSheet(finalAliasArray, fileName);
 
     console.warn('=============================================================');
     console.warn('|                  VERIFICATION COMPLETED                    |');
