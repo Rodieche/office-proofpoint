@@ -1,31 +1,31 @@
+// cSpell: ignore proofpoint
 import { proofpointAction } from "./proofpointStatus.js";
 
 export const ExchangeCheck = (exchangeMails, proofpointMails) => {
+    const result = [];
 
-    let newReturn = [];
+    proofpointMails.forEach(pp => {
+        const existsInExchange = exchangeMails.find(
+            ex => ex.PrimaryEmail === pp.title);
 
-    proofpointMails.forEach(function(pp){
-        const exist = exchangeMails.filter(ex => ex['PrimaryEmail'] == pp.title)[0];
-        if(!exist){
-            let actions = '';
-            if(pp.type == 'organization_admin' || pp.type == 'end_user'){
-                actions = proofpointAction.account.user.remove;
-            }else if( pp.type == 'functional_account' ){
-                actions = proofpointAction.account.functional.remove
-            }
-            
-            const user = {
+        if (!existsInExchange) {
+            const action =
+                pp.type === 'organization_admin' || pp.type === 'end_user'
+                    ? proofpointAction.account.user.remove
+                    : pp.type === 'functional_account'
+                    ? proofpointAction.account.functional.remove
+                    : '';
+
+            result.push({
                 name: pp.name,
                 primaryEmail: pp.title,
                 mailboxType: 'undefined',
                 proofpointType: pp.type,
                 alias: [],
-                actions
-            };
-
-            newReturn.push(user);
+                actions: action,
+            });
         }
     });
 
-    return newReturn;
-}
+    return result;
+};

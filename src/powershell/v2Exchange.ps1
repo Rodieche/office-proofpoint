@@ -1,52 +1,99 @@
-# Check if the ImportExcel module is installed and install if not
-if (-not (Get-Module -ListAvailable -Name ImportExcel)) {
-    Install-Module -Name ImportExcel -Scope CurrentUser -Force
-}
-
-# Check if the ExchangeOnlineManagement module is installed and install if not
+# Requiere: ExchangeOnlineManagement y Microsoft.Graph
 if (-not (Get-Module -ListAvailable -Name ExchangeOnlineManagement)) {
-    Install-Module -Name ExchangeOnlineManagement -Scope CurrentUser -Force
+    Install-Module ExchangeOnlineManagement -Scope CurrentUser -Force
+}
+if (-not (Get-Module -ListAvailable -Name Microsoft.Graph)) {
+    Install-Module Microsoft.Graph -Scope CurrentUser -Force
 }
 
-# Import the necessary modules
-Import-Module -Name ImportExcel
-Import-Module -Name ExchangeOnlineManagement
+Import-Module ExchangeOnlineManagement
+Import-Module Microsoft.Graph.Users
 
-# Connect to Exchange Online
+# ------------------------
+# 1. Login interactivo
+# ------------------------
+
+# Write-Host "Conectando a Microsoft Graph..." -ForegroundColor Cyan
+# Connect-MgGraph -Scopes "User.Read.All", "Directory.Read.All"
+
+Write-Host "Conectando a Exchange Online..." -ForegroundColor Cyan
 Connect-ExchangeOnline -ShowProgress $true
 
-# Get the mailboxes and their email addresses
-$mailboxes = Get-Mailbox | Select-Object DisplayName, PrimarySmtpAddress, EmailAddresses, RecipientTypeDetails, RecipientType
+# ------------------------
+# 2. Obtener licencias por usuario
+# ------------------------
 
-# Create a list to store the processed information
-$results = @()
+Write-Host "Obteniendo usuarios con licencias..." -ForegroundColor Yellow
 
-# Process each mailbox to separate primary email and aliases and get recipient type
-foreach ($mailbox in $mailboxes) {
-    $primaryEmail = $mailbox.PrimarySmtpAddress
-    $aliases = $mailbox.EmailAddresses | Where-Object { $_ -like "smtp:*" -and $_ -ne $primaryEmail }
+$allUsers = Get-MgUser -All
+$licensedUsers = @{}
+foreach ($user in $allUsers) {
+    $licenseDetails = Get-MgUserLicenseDetail -UserId $user.Id
+    $licenseNames = @()
 
-    $results += [PSCustomObject]@{
-        DisplayName = $mailbox.DisplayName
-        PrimaryEmail = $primaryEmail
-        Aliases = ($aliases -join "; ")
-        RecipientType = $mailbox.RecipientTypeDetails
+    foreach ($detail in $licenseDetails) {
+        foreach ($plan in $detail.ServicePlans) {
+            if ($plan.ServicePlanName -like "*EXCHANGE*" -and $plan.ProvisioningStatus -eq "Success") {
+                $licenseNames += $detail.SkuPartNumber
+                break
+            }
+        }
+    }
+
+    if ($licenseNames.Count -gt 0) {
+        $licensedUsers[$user.UserPrincipalName.ToLower()] = $licenseNames -join ", "
     }
 }
 
-# Define the output directory and file path
-$outputDir = ".\output"
-$outputFile = "$outputDir\Mailboxes-office.csv"
+# ------------------------
+# 3. Obtener buzones y combinar información
+# ------------------------
 
-# Check if the output directory exists and create it if it does not
+Write-Host "Procesando buzones de correo..." -ForegroundColor Yellow
+
+$mailboxes = Get-Mailbox -ResultSize Unlimited | Select-Object DisplayName, UserPrincipalName, PrimarySmtpAddress, EmailAddresses, RecipientTypeDetails
+
+$results = @()
+foreach ($mailbox in $mailboxes) {
+    $upn = $mailbox.UserPrincipalName.ToLower()
+    $primaryEmail = $mailbox.PrimarySmtpAddress.ToString().ToLower()
+    $aliases = $mailbox.EmailAddresses | Where-Object {
+        $_ -like "smtp:*" -and $_ -ne $primaryEmail
+    }
+
+    $hasLicense = $licensedUsers.ContainsKey($upn)
+    $licenseName = if ($hasLicense) { $licensedUsers[$upn] } else { "None" }
+
+    $results += [PSCustomObject]@{
+        DisplayName        = $mailbox.DisplayName
+        PrimaryEmail       = $primaryEmail
+        Aliases            = ($aliases -join "; ")
+        RecipientType      = $mailbox.RecipientTypeDetails
+        HasExchangeLicense = $hasLicense
+        LicenseNames       = $licenseName
+    }
+}
+
+# ------------------------
+# 4. Exportar resultados
+# ------------------------
+
+$outputDir = ".\output"
+$outputFile = "$outputDir\Mailboxes-with-licenses.csv"
+
 if (-not (Test-Path -Path $outputDir)) {
     New-Item -ItemType Directory -Path $outputDir -Force
 }
 
-# Export the results to a CSV file
 $results | Export-Csv -Path $outputFile -NoTypeInformation -Encoding UTF8
 
-# Disconnect from Exchange Online
+Write-Host "Exportación finalizada en: $outputFile" -ForegroundColor Green
+
+# ------------------------
+# 5. Desconectar
+# ------------------------
+
 Disconnect-ExchangeOnline -Confirm:$false
+Disconnect-MgGraph
 
 exit 0
