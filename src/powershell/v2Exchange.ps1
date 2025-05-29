@@ -10,14 +10,17 @@ Import-Module ExchangeOnlineManagement
 Import-Module Microsoft.Graph.Users
 
 # ------------------------
-# 1. Login interactivo
+# 1. Login único usando MS Graph
 # ------------------------
 
-# Write-Host "Conectando a Microsoft Graph..." -ForegroundColor Cyan
-# Connect-MgGraph -Scopes "User.Read.All", "Directory.Read.All"
+Write-Host "Conectando a Microsoft Graph..." -ForegroundColor Cyan
+$mgSession = Connect-MgGraph -Scopes "User.Read.All", "Directory.Read.All"
+
+# Reutilizar UPN del usuario autenticado
+$userUpn = ($mgSession.Account | Select-Object -ExpandProperty Username)
 
 Write-Host "Conectando a Exchange Online..." -ForegroundColor Cyan
-Connect-ExchangeOnline -ShowProgress $true
+Connect-ExchangeOnline -UserPrincipalName $userUpn -ShowProgress:$true
 
 # ------------------------
 # 2. Obtener licencias por usuario

@@ -1,5 +1,35 @@
+# Node.js dependencies
 node_modules/
-output/
+
+# Environment variables
 .env
-package-lock.json
+
+# Output and generated files
+output/
+!output/.gitkeep   # Optional: keep the folder structure
+
+# Specific file types (redundant due to output/, but explicit if needed)
+*.xlsx
+*.xls
+*.csv
+
+# Build artifacts or temporary files
 digestFile.txt
+
+# Lock files (optional to ignore)
+# package-lock.json  # Uncomment only if you *don't* want to lock dependencies
+
+# System-specific files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# IDEs and editors
+.vscode/
+.idea/
+
+# Optional: OS-specific
+ehthumbs.db
+Desktop.ini
