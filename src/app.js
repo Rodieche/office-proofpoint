@@ -1,12 +1,13 @@
-import { configDotenv } from 'dotenv'; 
+// cSpell: ignore Proofpoint readfiles enviroment enviroments
+import { configDotenv } from 'dotenv';
 import prompts from 'prompts';
 import fs from 'fs';
+import path from 'path';
 
 import { getOrgs } from './proofpoint/getOrgs.js';
 import { getUsersFromOrgs } from './proofpoint/getUsersFromOrg.js';
 import { createExcelSheet } from './plugins/excel/createExcelSheet.js';
 import { updateExcelSheet } from './plugins/excel/updateExcelSheet.js';
-import path from 'path';
 import { getDataFromExcel } from './plugins/excel/readfiles.js';
 import { checkProofpoint } from './helpers/proofpointCheck.js';
 import { checkAliases } from './helpers/aliasesCheck.js';
@@ -15,187 +16,132 @@ import { checkDomains, getDomains, matchDomain } from './helpers/CheckDomains.js
 import { ExchangeCheck } from './helpers/ExchangeCheck.js';
 import { enviromentVars } from './plugins/enviroments.js';
 
-const { prompt } = prompts;
 configDotenv();
 
-let username;
-let password;
-let orgs;
-export let selectedOrg;
-let users;
-let aliases_data = [];
-
 const questions = [
-    {
-        type: 'text',
-        name: 'user',
-        message: 'Proofpoint username (email address):',
-        validate: value => /\S+@\S+\.\S+/.test(value) ? true : 'Please enter a valid email address'
-    },
-    {
-        type: 'text',
-        style: 'password',
-        name: 'pwd',
-        message: 'Proofpoint password:',
-        mask: '*'
-    }
-]
+  {
+    type: 'text',
+    name: 'user',
+    message: 'Proofpoint username (email address):',
+    validate: value => /\S+@\S+\.\S+/.test(value) || 'Enter a valid email address',
+  },
+  {
+    type: 'text',
+    style: 'password',
+    name: 'pwd',
+    message: 'Proofpoint password:',
+    mask: '*',
+  },
+];
 
-const selectOrg = async() => {
-    const response = await prompt({
-        type: 'select',
-        name: 'org',
-        message: 'Choose customer',
-        choices: orgs,
-        initial: 1
-    });
-    return response.org;
+const logBanner = (title) => {
+  console.warn('='.repeat(60));
+  console.warn(`|${title.padStart((title.length + 56) / 2).padEnd(58)}|`);
+  console.warn('='.repeat(60));
+};
+
+async function getCredentials() {
+  if (!enviromentVars.proofpointCredentials) {
+    const { user, pwd } = await prompts(questions);
+    return { username: user, password: pwd };
+  }
+  const [username, password] = atob(enviromentVars.proofpointCredentials).split(':');
+  console.log('Credentials file found');
+  return { username, password };
 }
 
-export const setVars = async () => {
-    console.warn('=============================================================');
-    console.warn('|                  PROOFPOINT AUTHENTICATION                |');
-    console.warn('=============================================================');
-    console.log('Checking files...');
-    const existMailbox = fs.existsSync(path.join(process.cwd(),'output', 'Mailboxes-office.csv'));
-    if(!existMailbox){
-        console.error('Please run the next command on Powershell (as admin) first: .\\src\\powershell\\v2Exchange.ps1 ');
-        return;
-    }
-    if(!enviromentVars.proofpointCredentials){
-        const responses = await prompt(questions);
-        username = responses.user;
-        password = responses.pwd;
-    }else{
-        const credentials = atob(enviromentVars.proofpointCredentials).split(":");
-        username = credentials[0];
-        password = credentials[1];
-        console.log('Credentials file found')
-    }
-    orgs = await getOrgs(username, password);
-    let mailsExchange = getDataFromExcel('Mailboxes-office.csv');
-    const domain = getDomains(mailsExchange);
+function checkMailboxFile() {
+  const filePath = path.join(process.cwd(), 'output', 'Mailboxes-with-licenses.csv');
+  if (!fs.existsSync(filePath)) {
+    console.error('Missing Exchange data file.');
+    console.error('Run PowerShell as admin: .\\src\\powershell\\v2Exchange.ps1');
+    return false;
+  }
+  return true;
+}
 
-    //selectedOrg = await selectOrg();
-    selectedOrg = matchDomain(orgs, domain);
-    
-    console.log(`Selected customer: ${selectedOrg}`);
-    users = await getUsersFromOrgs(selectedOrg, username, password);
-    console.warn('=============================================================');
-    console.warn('|                  GENERATING EXCEL FILE                    |');
-    console.warn('=============================================================');
-    console.log('Generating Excel file...')
-    createExcelSheet(users);
-    users.forEach(function(user){
-        if(!user.alias) return
-        user.alias.forEach(function(a){
-            const newAlias = {
-                email: user.title,
-                alias: a.toLowerCase()
-            }
-        aliases_data.push(newAlias);
-        })
-    });
-    console.log('Checking Aliases...')
-    updateExcelSheet(aliases_data);
-    console.log('Export complete');
+async function setVars() {
+  console.clear();
+  logBanner('PROOFPOINT AUTHENTICATION');
 
-    console.warn('=============================================================');
-    console.warn('|                   MERGING INFORMATION                     |');
-    console.warn('=============================================================');
+  if (!checkMailboxFile()) return;
 
+  const { username, password } = await getCredentials();
 
-    console.log('Please wait...')
+  const orgs = await getOrgs(username, password);
+  let exchangeMails = getDataFromExcel('Mailboxes-with-licenses.csv');
+  const domain = getDomains(exchangeMails);
+  const selectedOrg = matchDomain(orgs, domain);
 
+  console.log(`Selected customer: ${selectedOrg}`);
+  const users = await getUsersFromOrgs(selectedOrg, username, password);
 
-    const isDomainOk = checkDomains(mailsExchange, selectedOrg);
+  logBanner('GENERATING EXCEL FILE');
+  console.log('Generating initial Excel file...');
+  createExcelSheet(users);
 
-    if(!isDomainOk){
-        console.l
-        console.warn('=============================================================');
-        console.warn('|                      DOMAINS ERROR                        |');
-        console.warn('=============================================================');
-        console.error('Proofpoint Domain and Exchange Domain are not the same');
-        return;
-    }else{
-        console.warn('=============================================================');
-        console.warn('|                      DOMAINS MATCH                        |');
-        console.warn('=============================================================');
-        console.log('Proofpoint Domain and Exchange Domain are not the same');
-    }
+  const aliasesData = users.flatMap(user =>
+    (user.alias || []).map(a => ({
+      email: user.title,
+      alias: a.toLowerCase(),
+    }))
+  );
 
-    mailsExchange = mailsExchange.map(ex => {
-        let newAlias = [];
-        const {Aliases, PrimaryEmail, ...data} = ex;
-        Aliases.split(';').forEach(function(a){
-            newAlias.push(a.split(':')[1].toLowerCase());
-        })
-        return {
-            PrimaryEmail: PrimaryEmail.toLowerCase(),
-            Aliases: newAlias,
-            ...data
-        }
-    });
+  console.log('Checking Aliases...');
+  updateExcelSheet(aliasesData);
+  console.log('Alias export complete.');
 
-    const onlyOnProofpoint = ExchangeCheck(mailsExchange, users);
+  logBanner('MERGING INFORMATION');
+  const isDomainOk = checkDomains(exchangeMails, selectedOrg);
 
-    let newInfo = [];
-
-    mailsExchange.forEach(function(mail){
-        const ppt = checkProofpoint(mail.PrimaryEmail, users);
-        let data = {
-            name: mail.DisplayName,
-            primaryEmail: mail.PrimaryEmail,
-            mailboxType: mail.RecipientType,
-            proofpointType: ppt,
-            alias: checkAliases(mail.PrimaryEmail, mail.Aliases, aliases_data),
-            actions: checkProofType(mail.RecipientType, ppt)
-        };
-        newInfo.push(data);
-    });
-
-    console.log('Creating digest...')
-    
-    newInfo = [...newInfo, ...onlyOnProofpoint];
-
-    const mails_to_export = newInfo.map(m => {
-        const { alias, ...dataMail } = m;
-        return dataMail;
-    })
-    
-    let finalAliasArray = [];
-    newInfo.forEach(function(m){
-        const { alias, ...dataMail } = m;
-        finalAliasArray.push(...alias);
-    })
-
-    // console.log(finalAliasArray);
-
-    const fileName = `${selectedOrg}_${new Date().getMilliseconds()}.xlsx`;
-    const file = 'digestFile.txt';
-
-    if (fs.existsSync(file)) {
-        fs.unlinkSync(file);
-    }
-    fs.writeFileSync(file, fileName, (err) => {
-        if (err) {
-            console.error("An error occurred while writing the file:", err);
-            return;
-        }
-        console.log(`${file} has been created successfully!`);});
-
-        createExcelSheet(mails_to_export, fileName);
-    updateExcelSheet(finalAliasArray, fileName);
-
-    console.warn('=============================================================');
-    console.warn('|                  VERIFICATION COMPLETED                    |');
-    console.warn('=============================================================');
-
-    console.log(`Check Digest.xlsx file on ${path.join(process.cwd(), 'output')}`);
-    console.warn('Move Digest file if you need the information, it will be deleted if run the app again');
-
+  if (!isDomainOk) {
+    logBanner('DOMAINS ERROR');
+    console.error('Proofpoint Domain and Exchange Domain do not match.');
     return;
+  }
+
+  logBanner('DOMAINS MATCH');
+  console.log('Proofpoint and Exchange domains are compatible.');
+
+  exchangeMails = exchangeMails.map(({ Aliases, PrimaryEmail, ...data }) => ({
+    PrimaryEmail: PrimaryEmail.toLowerCase(),
+    Aliases: Aliases.split(';').map(a => a.split(':')[1]?.toLowerCase() || ''),
+    ...data,
+  }));
+
+  const onlyOnProofpoint = ExchangeCheck(exchangeMails, users);
+
+  let finalData = exchangeMails.map(mail => {
+    const pptType = checkProofpoint(mail.PrimaryEmail, users);
+    return {
+      name: mail.DisplayName,
+      primaryEmail: mail.PrimaryEmail,
+      mailboxType: mail.RecipientType,
+      proofpointType: pptType,
+      hasExchangeLicense: mail.HasExchangeLicense,
+      alias: checkAliases(mail.PrimaryEmail, mail.Aliases, aliasesData),
+      actions: checkProofType(mail.RecipientType, pptType, mail.HasExchangeLicense),
+    };
+  });
+
+  finalData = [...finalData, ...onlyOnProofpoint];
+
+  const exportData = finalData.map(({ alias, ...rest }) => rest);
+  const allAliases = finalData.flatMap(d => d.alias || []);
+
+  const timestamp = new Date().getMilliseconds();
+  const fileName = `${selectedOrg}_${timestamp}.xlsx`;
+  const digestPath = 'digestFile.txt';
+
+  if (fs.existsSync(digestPath)) fs.unlinkSync(digestPath);
+  fs.writeFileSync(digestPath, fileName);
+
+  createExcelSheet(exportData, fileName);
+  updateExcelSheet(allAliases, fileName);
+
+  logBanner('VERIFICATION COMPLETED');
+  console.log(`Check ${fileName} in: ${path.join(process.cwd(), 'output')}`);
+  console.warn('Digest file will be overwritten on next run. Move it if needed.');
 }
 
-console.clear();
 setVars();
